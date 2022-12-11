@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import uuid
 import json
+from datetime import datetime
 
 # DJANGO IMPORTS
 from django.shortcuts import HttpResponse
@@ -56,26 +57,27 @@ def imgAiCreation(request):
     # Adding the data to Firebase
     doc_ref = db.collection(u'openAI_img_request').document(u'{}'.format(id))
     doc_ref.set({
-      u'URL': u'%s' % image_url,
-      # 
+      u'URL': u'%s' % image_url, 
       u'id': u'{}'.format(id),
       u'data_id': u'{}'.format(body['data_id']),
-      u'prompt': u'%s' % body['prompt']
+      u'prompt': u'%s' % body['prompt'],
+      u'date': u'{}'.format(datetime.now().strftime("%m/%d/%Y %H:%M:%S %z"))
     })
     
     # Front-End return package 
-    api_response ={
+    api_response = {
       'status':200,
       'id': id,
       'Prompt': '%s' % body['prompt'],
-      'OpenAi_url': image_url
+      'OpenAi_url': image_url,
+      'date': datetime.now().strftime("%m/%d/%Y %H:%M:%S %z") # the %z is for utc offset
     }
     return JsonResponse(api_response)
   else:
     # Front-End return package 
     api_response = {
       'status': 400,
-      'type': 'Bad Request'
+      'type': 'Bad Request',
+      'date': datetime.now().strftime("%m/%d/%Y %H:%M:%S %z") # the %z is for utc offset
     }
-    
     return JsonResponse(api_response)
