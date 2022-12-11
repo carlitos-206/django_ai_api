@@ -5,8 +5,10 @@ import uuid
 import json
 
 # DJANGO IMPORTS
-from django.shortcuts import HttpResponse, redirect
+from django.shortcuts import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
 
 # FIREBASE PACKAGE
 import firebase_admin
@@ -26,34 +28,54 @@ openai.api_key = os.getenv('AI_KEY')
 cred = credentials.Certificate('keys.json')
 # Initialize the app.
 app = firebase_admin.initialize_app(cred)
-# Call the db
+# Call the Firbase DB
 db = firestore.client()
 
-
+def index(request):
+  # I will create a session to ensure the user has agreed to the cookies to acces the ai
+  return HttpResponse('set the session')
 # Since theres no important data being passed no csrf_token is need
 @csrf_exempt
-def index(request):
+def imgAiCreation(request):
+  # The user must make a POST request in order to access DALL-E
   if request.method == "POST":
+    # Parsing the request
     body_unicode = request.body.decode('utf-8')
     body = json.loads(body_unicode)
+    # Request ID
+    id = uuid.uuid1()
+    
+    # Calling the OpenAi API
     response = openai.Image.create(
       prompt= '%s' % body['prompt'],
       n=1,
       size="1024x1024"
       )
     image_url = response['data'][0]['url']
-    id = uuid.uuid1()
+
+    # Adding the data to Firebase
     doc_ref = db.collection(u'openAI_img_request').document(u'{}'.format(id))
     doc_ref.set({
-      # The old school literal templates is required by firebase
-      # sample: 'hello %s' %s world ---> hello world
-      # the u is from firebase sdk
       u'URL': u'%s' % image_url,
       # 
       u'id': u'{}'.format(id),
       u'data_id': u'{}'.format(body['data_id']),
       u'prompt': u'%s' % body['prompt']
     })
-    return redirect("http://localhost:3000/")
+    
+    # Front-End return package 
+    api_response ={
+      'status':200,
+      'id': id,
+      'Prompt': '%s' % body['prompt'],
+      'OpenAi_url': image_url
+    }
+    return JsonResponse(api_response)
   else:
-    return HttpResponse('lo que dios quiera')
+    # Front-End return package 
+    api_response = {
+      'status': 400,
+      'type': 'Bad Request'
+    }
+    
+    return JsonResponse(api_response)
