@@ -1,4 +1,5 @@
 keys.json
+test.js
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
